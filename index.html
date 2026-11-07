@@ -11,7 +11,7 @@ h1{font-size:22px;margin:4px 0 12px}h2{font-size:14px;text-transform:uppercase;c
 .card{background:var(--c);border-radius:12px;padding:12px;margin-bottom:12px}
 label{display:block;font-size:13px;margin:8px 0 3px;opacity:.7}
 input,select{width:100%;box-sizing:border-box;font-size:16px;padding:9px;border:1px solid var(--l);border-radius:8px;background:var(--bg);color:var(--t)}
-.dayh{font-weight:600;margin-top:10px}.r{display:flex;gap:8px}.r>div{flex:1}
+.r3{display:flex;gap:6px}.sub{font-size:13px;opacity:.7;margin:10px 0 3px}.dayh{font-weight:600;margin-top:10px}.r{display:flex;gap:8px}.r>div{flex:1}
 .ck{display:flex;align-items:center;gap:10px;font-size:17px;margin:12px 0 4px;opacity:1}.ck input{width:24px;height:24px}
 button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-radius:12px;background:var(--a);color:#fff}
 #pv{font-size:13px;width:100%;border-collapse:collapse}#pv td,#pv th{padding:3px;text-align:right;border-bottom:1px solid var(--l)}#pv td:first-child,#pv th:first-child{text-align:left}
@@ -24,57 +24,68 @@ button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-ra
 <label>Spesensatz 24h (€)</label><input id="satz" inputmode="decimal"></div>
 <div class="card"><h2>Fahrten (max. 5 Tage)</h2>
 <label>Wie viele Fahrten zum Kunden?</label><select id="nf"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+<label>Ziel</label><input id="ziel">
 <div id="trips"></div>
-<label>Tätigkeit</label><input id="taet">
-<label class="ck"><input type="checkbox" id="sp" checked> Spesen?</label></div>
+<label>Tätigkeit</label><input id="taet"></div>
 <div class="card"><h2>Kosten pro Tag</h2><div id="days"></div></div>
 <div class="card"><h2>Vorschau</h2><div id="pv" style="overflow-x:auto"></div></div>
 <button id="go">PDF erstellen</button>
-<p style="text-align:center;opacity:.5;font-size:12px">Version 3</p>
+<p style="text-align:center;opacity:.5;font-size:12px">Version 4</p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const $=i=>document.getElementById(i),N=v=>parseFloat(String(v||'').replace(',','.'))||0,costs={};
 ['name','abt','firma','satz'].forEach(k=>{try{$(k).value=localStorage.getItem(k)||''}catch(e){}$(k).addEventListener('input',()=>{try{localStorage.setItem(k,$(k).value)}catch(e){}})});
 const p2=n=>('0'+n).slice(-2),dd=d=>p2(d.getDate())+'.'+p2(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(-2),tt=d=>p2(d.getHours())+':'+p2(d.getMinutes());
-const fD=i=>{i.value=i.value.replace(/\D/g,'').slice(0,6).replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2}\.\d{2})(\d)/,'$1.$2')};
+const _fD=i=>{i.value=i.value.replace(/\D/g,'').slice(0,6).replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2}\.\d{2})(\d)/,'$1.$2')};
 const fT=i=>{i.value=i.value.replace(/\D/g,'').slice(0,4).replace(/^(\d{2})(\d)/,'$1:$2')};
 function mk(dv,tv){const a=/^(\d\d)\.(\d\d)\.(\d\d)$/.exec(dv),b=/^(\d\d):(\d\d)$/.exec(tv);if(!a||!b||+b[1]>23||+b[2]>59)return null;
  const d=new Date(2000+ +a[3],a[2]-1,+a[1],+b[1],+b[2]);return d.getDate()==+a[1]&&d.getMonth()==a[2]-1?d:null}
 const eur=v=>{v=Math.round(v*100)/100;return Number.isInteger(v)?v+',-':v.toFixed(2).replace('.',',')};
 const hh=h=>String(Math.round(h*100)/100).replace('.',',');
-const def=p=>{const t=p?p.ed:dd(new Date());return{sd:t,st:'08:00',ed:t,et:'17:00',z:''}};
-const TR=[def()];
-function renderTrips(){$('trips').innerHTML=TR.map((t,i)=>{const a=(l,f,m)=>'<div><label>'+l+'</label><input inputmode="numeric" maxlength="'+(m?5:8)+'" placeholder="'+(m?'HH:MM':'TT.MM.JJ')+'" '+(m?'data-m="1"':'data-d="1"')+' data-i="'+i+'" data-f="'+f+'" value="'+t[f]+'"></div>';
- return '<div class="dayh">Fahrt '+(i+1)+'</div><div class="r">'+a('Beginn Datum','sd')+a('Beginn Zeit (24h)','st',1)+'</div><div class="r">'+a('Ende Datum','ed')+a('Ende Zeit (24h)','et',1)+'</div><label>Ziel</label><input data-i="'+i+'" data-f="z" value="'+t.z+'">'}).join('')}
+const def=p=>p?{sd:dd(p),st:tt(p),ed:dd(p),et:'17:00',sp:true}:{sd:dd(new Date()),st:'08:00',ed:dd(new Date()),et:'17:00',sp:true};
+const TR=[def()],Y0=new Date().getFullYear();
+const rg=(a,b,f)=>Array.from({length:b-a+1},(_,i)=>f?f(a+i):p2(a+i));
+function sel(o,v,i,f){return '<select data-i="'+i+'" data-f="'+f+'">'+o.map(x=>'<option value="'+x[0]+'"'+(x[0]==v?' selected':'')+'>'+x[1]+'</option>').join('')+'</select>'}
+function grp(i,f,tm){const v=TR[i][f],o=x=>x.map(y=>[y,y]);
+ if(tm){const p=v.split(':');return '<div class="r3" data-g="1">'+sel(o(rg(0,23)),p[0],i,f)+sel(o(['00','15','30','45']),p[1],i,f)+'</div>'}
+ const p=v.split('.');return '<div class="r3" data-g="1">'+sel(o(rg(1,31)),p[0],i,f)+sel(o(rg(1,12)),p[1],i,f)+sel(rg(Y0-1,Y0+1,y=>[String(y).slice(-2),y]),p[2],i,f)+'</div>'}
+function renderTrips(){$('trips').innerHTML=TR.map((t,i)=>'<div class="dayh">Fahrt '+(i+1)+'</div><div class="sub">Beginn (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div>'+grp(i,'sd')+'</div><div>'+grp(i,'st',1)+'</div></div><div class="sub">Ende (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div>'+grp(i,'ed')+'</div><div>'+grp(i,'et',1)+'</div></div><label class="ck"><input type="checkbox" data-i="'+i+'" data-f="sp"'+(t.sp?' checked':'')+'> Spesen?</label>').join('')}
+function norm(){let p=null;TR.forEach(t=>{const s=mk(t.sd,t.st);let e=mk(t.ed,t.et);
+ if(p&&s&&s<p){t.sd=dd(p);t.st=tt(p)}
+ const s2=mk(t.sd,t.st);if(s2&&e&&e<s2){t.ed=t.sd;t.et=t.st;e=s2}p=e||p})}
 function calc(){
- const rate=N($('satz').value),sp=$('sp').checked,F=[];
- for(const t of TR){const s=mk(t.sd,t.st),e=mk(t.ed,t.et);if(!s||!e||e<=s)return null;F.push({s,e,z:t.z})}
+ const rate=N($('satz').value),z=$('ziel').value,F=[];
+ for(const t of TR){const s=mk(t.sd,t.st),e=mk(t.ed,t.et);if(!s||!e||e<=s)return{err:'Bitte Beginn und Ende prüfen (Ende muss nach dem Beginn liegen).'};F.push({s,e,sp:t.sp})}
  F.sort((a,b)=>a.s-b.s);
  for(let i=1;i<F.length;i++)if(F[i].s<F[i-1].e)return{err:'Fahrten überschneiden sich.'};
  const M=new Map();
  for(const f of F){let d0=new Date(f.s.getFullYear(),f.s.getMonth(),f.s.getDate()),first=true;
   while(d0<f.e){const d1=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()+1),a=f.s>d0?f.s:d0,b=f.e<d1?f.e:d1,k=d0.getTime();
-   let m=M.get(k);if(!m){if(M.size>=5)return{err:'Maximal 5 Tage möglich.'};m={d:d0,d1,ms:0,from:a,to:b,over:false,routes:[]};M.set(k,m)}
-   m.ms+=b-a;if(a<m.from)m.from=a;if(b>m.to)m.to=b;if(f.s<d0)m.over=true;if(first)m.routes.push(f.z);first=false;d0=d1}}
+   let m=M.get(k);if(!m){if(M.size>=5)return{err:'Maximal 5 Tage möglich.'};m={d:d0,d1,ms:0,msS:0,from:a,to:b,over:false,routes:[]};M.set(k,m)}
+   m.ms+=b-a;if(a<m.from)m.from=a;if(b>m.to)m.to=b;
+   if(f.sp){m.msS+=b-a;if(f.s<d0)m.over=true}
+   if(first)m.routes.push(z);first=false;d0=d1}}
  const rows=[...M.values()].sort((x,y)=>x.d-y.d).map(m=>{
-  const h=m.ms/36e5,full=m.ms==m.d1-m.d,v=sp?(full?rate:h>8?rate/2:0):0,u=sp&&m.over?-rate*0.2:0,c=costs[dd(m.d)]||{},f=N(c.f),o=N(c.o);
+  const h=m.ms/36e5,hs=m.msS/36e5,full=m.msS==m.d1-m.d,v=full?rate:hs>8?rate/2:0,u=m.over?-rate*0.2:0,c=costs[dd(m.d)]||{},f=N(c.f),o=N(c.o);
   return{d:m.d,from:tt(m.from),to:m.to.getTime()==m.d1.getTime()?'24:00':tt(m.to),h,v,u,f,o,sum:v+u+f+o,routes:m.routes}});
  return{s:F[0].s,e:F[F.length-1].e,rows};
 }
 let dk='';
-function renderDays(){const r=calc(),k=r&&!r.err?r.rows.map(x=>dd(x.d)):[];if(k.join()===dk)return;dk=k.join();
+function renderDays(){const r=calc(),k=!r.err?r.rows.map(x=>dd(x.d)):[];if(k.join()===dk)return;dk=k.join();
  $('days').innerHTML=k.length?k.map(d=>{const c=costs[d]||{};return '<div class="dayh">'+d+'</div><div class="r"><div><label>Fahrtkosten (€)</label><input inputmode="decimal" data-k="'+d+'" data-t="f" value="'+(c.f||'')+'"></div><div><label>Sonstige Kosten (€)</label><input inputmode="decimal" data-k="'+d+'" data-t="o" value="'+(c.o||'')+'"></div></div>'}).join(''):'<label>Bitte Fahrten vollständig eingeben.</label>'}
 function prev(){const r=calc(),t=$('pv');
- if(!r){t.textContent='Bitte Datum (TT.MM.JJ) und Zeit (HH:MM) prüfen.';return}
  if(r.err){t.textContent=r.err;return}
  const T=k=>r.rows.reduce((a,x)=>a+x[k],0),z=v=>v?eur(v):'';
  t.innerHTML='<table id="pv"><tr><th>Datum</th><th>Std.</th><th>Verpfl.</th><th>Übern.</th><th>Fahrt</th><th>Sonst.</th><th>Summe</th></tr>'+r.rows.map(x=>'<tr><td>'+dd(x.d)+'</td><td>'+hh(x.h)+'</td><td>'+z(x.v)+'</td><td>'+z(x.u)+'</td><td>'+z(x.f)+'</td><td>'+z(x.o)+'</td><td>'+eur(x.sum)+'</td></tr>').join('')+'<tr><th>Gesamt</th><th></th><th>'+z(T('v'))+'</th><th>'+z(T('u'))+'</th><th>'+z(T('f'))+'</th><th>'+z(T('o'))+'</th><th>'+eur(T('sum'))+'</th></tr></table>'}
-document.addEventListener('input',ev=>{const i=ev.target,d=i.dataset;
- if(d.d)fD(i);else if(d.m)fT(i);
- if(d.i!==undefined)TR[d.i][d.f]=i.value;else if(d.k)(costs[d.k]=costs[d.k]||{})[d.t]=i.value;
- renderDays();prev()});
-$('nf').onchange=()=>{const n=+$('nf').value;while(TR.length<n)TR.push(def(TR[TR.length-1]));TR.length=n;renderTrips();renderDays();prev()};
+document.addEventListener('input',ev=>{const d=ev.target.dataset;if(d.k)(costs[d.k]=costs[d.k]||{})[d.t]=ev.target.value;renderDays();prev()});
+document.addEventListener('change',ev=>{const i=ev.target,d=i.dataset;if(d.i===undefined)return;const t=TR[d.i];
+ if(d.f=='sp')t.sp=i.checked;
+ else{const g=[...i.closest('[data-g]').querySelectorAll('select')].map(x=>x.value);
+  if(d.f=='sd'||d.f=='ed'){let D=+g[0];const M=+g[1],Y=+g[2];D=Math.min(D,new Date(2000+Y,M,0).getDate());t[d.f]=p2(D)+'.'+p2(M)+'.'+p2(Y);if(d.f=='sd')t.ed=t.sd}
+  else t[d.f]=g.join(':')}
+ norm();renderTrips();renderDays();prev()});
+$('nf').onchange=()=>{const n=+$('nf').value;while(TR.length<n){const l=TR[TR.length-1],e=mk(l.ed,l.et);TR.push(def(e))}TR.length=n;norm();renderTrips();renderDays();prev()};
 renderTrips();renderDays();prev();
 function build(r){
  const doc=new jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),T=(s,x,y,o)=>doc.text(String(s),x,y,o);
@@ -111,7 +122,7 @@ function build(r){
  doc.setFont('helvetica','normal');doc.rect(8,yb+18,R-8,23);doc.line(78,yb+18,78,yb+41);doc.line(148,yb+18,148,yb+41);
  doc.setFontSize(6.5);T('Abrechnung erstellt / Betrag richtig erhalten',9,yb+21.5);T('geprüft / Zahlungsanweisung',79,yb+21.5);T('Buchungsvermerke',149,yb+21.5);
  return doc;}
-$('go').onclick=async()=>{const r=calc();if(!r||r.err){alert(r?r.err:'Bitte Datum und Zeit prüfen.');return}
+$('go').onclick=async()=>{const r=calc();if(r.err){alert(r.err);return}
  const doc=build(r),blob=doc.output('blob'),f=new File([blob],'Reisekosten_'+dd(r.s)+'.pdf',{type:'application/pdf'});
  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});return}catch(e){if(e.name==='AbortError')return}}
  window.open(URL.createObjectURL(blob),'_blank');};
