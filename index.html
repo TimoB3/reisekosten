@@ -11,7 +11,7 @@ h1{font-size:22px;margin:4px 0 12px}h2{font-size:14px;text-transform:uppercase;c
 .card{background:var(--c);border-radius:12px;padding:12px;margin-bottom:12px}
 label{display:block;font-size:13px;margin:8px 0 3px;opacity:.7}
 input,select{width:100%;box-sizing:border-box;font-size:16px;padding:9px;border:1px solid var(--l);border-radius:8px;background:var(--bg);color:var(--t)}
-.r3{display:flex;gap:6px}.sub{font-size:13px;opacity:.7;margin:10px 0 3px}.dayh{font-weight:600;margin-top:10px}.r{display:flex;gap:8px}.r>div{flex:1}
+.r3{display:flex;gap:6px}.r3 select{padding:9px 4px}.tm select{font-size:12px;padding:6px 2px}.sub{font-size:13px;opacity:.7;margin:10px 0 3px}.dayh{font-weight:600;margin-top:10px}.r{display:flex;gap:8px}.r>div{flex:1}
 .ck{display:flex;align-items:center;gap:10px;font-size:17px;margin:12px 0 4px;opacity:1}.ck input{width:24px;height:24px}
 button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-radius:12px;background:var(--a);color:#fff}
 #pv{font-size:13px;width:100%;border-collapse:collapse}#pv td,#pv th{padding:3px;text-align:right;border-bottom:1px solid var(--l)}#pv td:first-child,#pv th:first-child{text-align:left}
@@ -30,7 +30,7 @@ button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-ra
 <div class="card"><h2>Kosten pro Tag</h2><div id="days"></div></div>
 <div class="card"><h2>Vorschau</h2><div id="pv" style="overflow-x:auto"></div></div>
 <button id="go">PDF erstellen</button>
-<p style="text-align:center;opacity:.5;font-size:12px">Version 4</p>
+<p style="text-align:center;opacity:.5;font-size:12px">Version 4.1</p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -48,9 +48,9 @@ const TR=[def()],Y0=new Date().getFullYear();
 const rg=(a,b,f)=>Array.from({length:b-a+1},(_,i)=>f?f(a+i):p2(a+i));
 function sel(o,v,i,f){return '<select data-i="'+i+'" data-f="'+f+'">'+o.map(x=>'<option value="'+x[0]+'"'+(x[0]==v?' selected':'')+'>'+x[1]+'</option>').join('')+'</select>'}
 function grp(i,f,tm){const v=TR[i][f],o=x=>x.map(y=>[y,y]);
- if(tm){const p=v.split(':');return '<div class="r3" data-g="1">'+sel(o(rg(0,23)),p[0],i,f)+sel(o(['00','15','30','45']),p[1],i,f)+'</div>'}
+ if(tm){const p=v.split(':');return '<div class="r3 tm" data-g="1">'+sel(o(rg(0,23)),p[0],i,f)+sel(o(['00','15','30','45']),p[1],i,f)+'</div>'}
  const p=v.split('.');return '<div class="r3" data-g="1">'+sel(o(rg(1,31)),p[0],i,f)+sel(o(rg(1,12)),p[1],i,f)+sel(rg(Y0-1,Y0+1,y=>[String(y).slice(-2),y]),p[2],i,f)+'</div>'}
-function renderTrips(){$('trips').innerHTML=TR.map((t,i)=>'<div class="dayh">Fahrt '+(i+1)+'</div><div class="sub">Beginn (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div>'+grp(i,'sd')+'</div><div>'+grp(i,'st',1)+'</div></div><div class="sub">Ende (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div>'+grp(i,'ed')+'</div><div>'+grp(i,'et',1)+'</div></div><label class="ck"><input type="checkbox" data-i="'+i+'" data-f="sp"'+(t.sp?' checked':'')+'> Spesen?</label>').join('')}
+function renderTrips(){$('trips').innerHTML=TR.map((t,i)=>'<div class="dayh">Fahrt '+(i+1)+'</div><div class="sub">Beginn (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div style="flex:7">'+grp(i,'sd')+'</div><div style="flex:3">'+grp(i,'st',1)+'</div></div><div class="sub">Ende (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div style="flex:7">'+grp(i,'ed')+'</div><div style="flex:3">'+grp(i,'et',1)+'</div></div><label class="ck"><input type="checkbox" data-i="'+i+'" data-f="sp"'+(t.sp?' checked':'')+'> Spesen?</label>').join('')}
 function norm(){let p=null;TR.forEach(t=>{const s=mk(t.sd,t.st);let e=mk(t.ed,t.et);
  if(p&&s&&s<p){t.sd=dd(p);t.st=tt(p)}
  const s2=mk(t.sd,t.st);if(s2&&e&&e<s2){t.ed=t.sd;t.et=t.st;e=s2}p=e||p})}

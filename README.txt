@@ -1,4 +1,4 @@
-REISEKOSTEN-APP (PWA fürs iPhone) – Version 4
+REISEKOSTEN-APP (PWA fürs iPhone) – Version 4.1
 ==============================================
 
 1. ZIEL
@@ -97,7 +97,7 @@ Damit Version 3 bei dir ankommt:
      (im Repository unter "Actions" sichtbar).
   b) App komplett schließen (im App-Umschalter wegwischen) und neu öffnen -
      dies ggf. ein zweites Mal wiederholen.
-  c) Unten auf der Seite steht "Version 4". Steht dort etwas anderes, gilt noch die alte Version.
+  c) Unten auf der Seite steht "Version 4.1". Steht dort etwas anderes, gilt noch die alte Version.
   d) Falls nötig: Home-Bildschirm-Symbol löschen, in iOS unter Einstellungen > Apps > Safari >
      Erweitert > Website-Daten die Seite entfernen, dann neu über Safari hinzufügen.
 Künftige Updates kommen dann automatisch beim nächsten Start (mit Internet).
@@ -114,6 +114,7 @@ v3  Mehrere Fahrten (Anzahl wählbar, je Fahrt Beginn, Ende, Ziel); Strecke nur 
 v4  Datum (Tag/Monat/Jahr) und Uhrzeit (Minuten 00/15/30/45) wieder per Auswahl;
     Fahrten zeitlich geordnet (automatische Korrektur); Ende-Datum folgt dem Beginn-Datum;
     Ziel nur einmal, Strecke trotzdem je Fahrt; Spesen-Checkbox je Fahrt.
+v4.1 Uhrzeitfelder verkleinert, Datumsfelder vergrößert (Zahlen vollständig lesbar).
 
 6. DATEIEN
 ----------
