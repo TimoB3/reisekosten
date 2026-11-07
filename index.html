@@ -11,7 +11,7 @@ h1{font-size:22px;margin:4px 0 12px}h2{font-size:14px;text-transform:uppercase;c
 .card{background:var(--c);border-radius:12px;padding:12px;margin-bottom:12px}
 label{display:block;font-size:13px;margin:8px 0 3px;opacity:.7}
 input{width:100%;box-sizing:border-box;font-size:16px;padding:9px;border:1px solid var(--l);border-radius:8px;background:var(--bg);color:var(--t)}
-.r{display:flex;gap:8px}.r>div{flex:1}
+.dayh{font-weight:600;margin-top:10px}.r{display:flex;gap:8px}.r>div{flex:1}
 .ck{display:flex;align-items:center;gap:10px;font-size:17px;margin:12px 0 4px;opacity:1}.ck input{width:24px;height:24px}
 button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-radius:12px;background:var(--a);color:#fff}
 #pv{font-size:13px;width:100%;border-collapse:collapse}#pv td,#pv th{padding:3px;text-align:right;border-bottom:1px solid var(--l)}#pv td:first-child,#pv th:first-child{text-align:left}
@@ -22,73 +22,89 @@ button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-ra
 <label>Abteilung</label><input id="abt">
 <label>Firmenstandort</label><input id="firma">
 <label>Spesensatz 24h (€)</label><input id="satz" inputmode="decimal"></div>
-<div class="card"><h2>Reise</h2>
-<div class="r"><div><label>Startdatum</label><input type="date" id="sd"></div><div><label>Startzeit</label><input type="time" id="st" value="08:00"></div></div>
-<div class="r"><div><label>Enddatum</label><input type="date" id="ed"></div><div><label>Endzeit</label><input type="time" id="et" value="17:00"></div></div>
+<div class="card"><h2>Reise (max. 5 Tage)</h2>
+<div class="r"><div><label>Startdatum</label><input id="sd" inputmode="numeric" maxlength="8" placeholder="TT.MM.JJ" data-d="1"></div><div><label>Startzeit (24h)</label><input id="st" inputmode="numeric" maxlength="5" placeholder="HH:MM" value="08:00" data-m="1"></div></div>
+<div class="r"><div><label>Enddatum</label><input id="ed" inputmode="numeric" maxlength="8" placeholder="TT.MM.JJ" data-d="1"></div><div><label>Endzeit (24h)</label><input id="et" inputmode="numeric" maxlength="5" placeholder="HH:MM" value="17:00" data-m="1"></div></div>
 <label>Einsatzort</label><input id="ort">
 <label>Tätigkeit</label><input id="taet">
-<label class="ck"><input type="checkbox" id="sp" checked> Spesen?</label>
-<div class="r"><div><label>Fahrtkosten (€)</label><input id="fk" inputmode="decimal"></div><div><label>Sonstige Kosten (€)</label><input id="so" inputmode="decimal"></div></div></div>
+<label class="ck"><input type="checkbox" id="sp" checked> Spesen?</label></div>
+<div class="card"><h2>Kosten pro Tag</h2><div id="days"></div></div>
 <div class="card"><h2>Vorschau</h2><div id="pv" style="overflow-x:auto"></div></div>
 <button id="go">PDF erstellen</button>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const $=i=>document.getElementById(i),N=v=>parseFloat(String(v||'').replace(',','.'))||0;
+const $=i=>document.getElementById(i),N=v=>parseFloat(String(v||'').replace(',','.'))||0,costs={};
 ['name','abt','firma','satz'].forEach(k=>{try{$(k).value=localStorage.getItem(k)||''}catch(e){}$(k).addEventListener('input',()=>{try{localStorage.setItem(k,$(k).value)}catch(e){}})});
-const iso=d=>d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
-$('sd').value=$('ed').value=iso(new Date());
-const p2=n=>('0'+n).slice(-2),dd=d=>p2(d.getDate())+'.'+p2(d.getMonth()+1),dy=d=>dd(d)+'.'+String(d.getFullYear()).slice(-2),tt=d=>p2(d.getHours())+':'+p2(d.getMinutes());
+const p2=n=>('0'+n).slice(-2),dd=d=>p2(d.getDate())+'.'+p2(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(-2),tt=d=>p2(d.getHours())+':'+p2(d.getMinutes());
+$('sd').value=$('ed').value=dd(new Date());
+const fD=i=>{i.value=i.value.replace(/\D/g,'').slice(0,6).replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2}\.\d{2})(\d)/,'$1.$2')};
+const fT=i=>{i.value=i.value.replace(/\D/g,'').slice(0,4).replace(/^(\d{2})(\d)/,'$1:$2')};
+function mk(dv,tv){const a=/^(\d\d)\.(\d\d)\.(\d\d)$/.exec(dv),b=/^(\d\d):(\d\d)$/.exec(tv);if(!a||!b||+b[1]>23||+b[2]>59)return null;
+ const d=new Date(2000+ +a[3],a[2]-1,+a[1],+b[1],+b[2]);return d.getDate()==+a[1]&&d.getMonth()==a[2]-1?d:null}
 const eur=v=>{v=Math.round(v*100)/100;return Number.isInteger(v)?v+',-':v.toFixed(2).replace('.',',')};
 const hh=h=>String(Math.round(h*100)/100).replace('.',',');
 function calc(){
- const s=new Date($('sd').value+'T'+$('st').value),e=new Date($('ed').value+'T'+$('et').value);
- if(isNaN(s)||isNaN(e)||e<=s)return null;
+ const s=mk($('sd').value,$('st').value),e=mk($('ed').value,$('et').value);
+ if(!s||!e||e<=s)return null;
  const rate=N($('satz').value),sp=$('sp').checked,rows=[];
  let d0=new Date(s.getFullYear(),s.getMonth(),s.getDate());
  for(let i=0;d0<e;i++){
-  const d1=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()+1),a=s>d0?s:d0,b=e<d1?e:d1,h=(b-a)/36e5;
+  if(i>=5)return{err:1};
+  const d1=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()+1),a=s>d0?s:d0,b=e<d1?e:d1,h=(b-a)/36e5,c=costs[dd(d0)]||{};
   const full=a.getTime()==d0.getTime()&&b.getTime()==d1.getTime();
-  const v=sp?(full?rate:h>8?rate/2:0):0,u=sp&&i>0?-rate*0.2:0,f=i?0:N($('fk').value),o=i?0:N($('so').value);
+  const v=sp?(full?rate:h>8?rate/2:0):0,u=sp&&i>0?-rate*0.2:0,f=N(c.f),o=N(c.o);
   rows.push({d:d0,from:i?'00:00':tt(s),to:b.getTime()==e.getTime()?tt(e):'24:00',h,v,u,f,o,sum:v+u+f+o});d0=d1;
  }
  return{s,e,rows};
 }
-function prev(){const r=calc(),t=$('pv');if(!r){t.textContent='Bitte Start/Ende prüfen.';return}
- t.innerHTML='<table id="pv"><tr><th>Datum</th><th>Std.</th><th>Verpfl.</th><th>Übern.</th><th>Summe</th></tr>'+r.rows.map(x=>'<tr><td>'+dd(x.d)+'</td><td>'+hh(x.h)+'</td><td>'+eur(x.v)+'</td><td>'+(x.u?eur(x.u):'')+'</td><td>'+eur(x.sum)+'</td></tr>').join('')+'</table>'}
-document.querySelectorAll('input').forEach(i=>i.addEventListener('input',prev));prev();
+let dk='';
+function renderDays(){const r=calc(),k=r&&!r.err?r.rows.map(x=>dd(x.d)):[];if(k.join()===dk)return;dk=k.join();
+ $('days').innerHTML=k.length?k.map(d=>{const c=costs[d]||{};return '<div class="dayh">'+d+'</div><div class="r"><div><label>Fahrtkosten (€)</label><input inputmode="decimal" data-k="'+d+'" data-t="f" value="'+(c.f||'')+'"></div><div><label>Sonstige Kosten (€)</label><input inputmode="decimal" data-k="'+d+'" data-t="o" value="'+(c.o||'')+'"></div></div>'}).join(''):'<label>Bitte Start und Ende eingeben.</label>'}
+function prev(){const r=calc(),t=$('pv');
+ if(!r){t.textContent='Bitte Datum (TT.MM.JJ) und Zeit (HH:MM) prüfen.';return}
+ if(r.err){t.textContent='Maximal 5 Tage möglich.';return}
+ const T=k=>r.rows.reduce((a,x)=>a+x[k],0),z=v=>v?eur(v):'';
+ t.innerHTML='<table id="pv"><tr><th>Datum</th><th>Std.</th><th>Verpfl.</th><th>Übern.</th><th>Fahrt</th><th>Sonst.</th><th>Summe</th></tr>'+r.rows.map(x=>'<tr><td>'+dd(x.d)+'</td><td>'+hh(x.h)+'</td><td>'+z(x.v)+'</td><td>'+z(x.u)+'</td><td>'+z(x.f)+'</td><td>'+z(x.o)+'</td><td>'+eur(x.sum)+'</td></tr>').join('')+'<tr><th>Gesamt</th><th></th><th>'+z(T('v'))+'</th><th>'+z(T('u'))+'</th><th>'+z(T('f'))+'</th><th>'+z(T('o'))+'</th><th>'+eur(T('sum'))+'</th></tr></table>'}
+document.addEventListener('input',ev=>{const i=ev.target,d=i.dataset;
+ if(d.k)(costs[d.k]=costs[d.k]||{})[d.t]=i.value;else if(d.d)fD(i);else if(d.m)fT(i);
+ renderDays();prev()});
+document.addEventListener('change',prev);renderDays();prev();
 function build(r){
- const doc=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a5'});
- const W=[13,13,47,10,11,18,18,17,17,15,18],X=[8];W.forEach((w,i)=>X.push(X[i]+w));const R=X[11],T=(s,x,y,o)=>doc.text(String(s),x,y,o);
+ const doc=new jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'}),T=(s,x,y,o)=>doc.text(String(s),x,y,o);
+ const H=[['Datum'],['Reise-Beginn/','Ende'],['Reisezweck und besuchte','Firmen bzw. Orte'],['Std.'],['Verpflegung','pauschal'],['Übernachtung','o. Frühst.'],['Fahrtkosten'],['Sonstiges','(Einzelnachweis)'],['Summe']];
+ const SM=['00.00.00','24:00','','00,00','-000,00','-000,00','0000,00','0000,00','0000,00'];
+ const W=H.map((h,i)=>{doc.setFont('helvetica','normal');doc.setFontSize(6.5);const a=Math.max(...h.map(s=>doc.getTextWidth(s)));doc.setFontSize(7.5);return Math.max(a,doc.getTextWidth(SM[i]))+2.6});
+ W[2]=197-W.reduce((a,b,i)=>i==2?a:a+b,0);
+ const X=[8];W.forEach((w,i)=>X.push(X[i]+w));const R=X[9];
  doc.setLineWidth(.2);doc.setFont('helvetica','normal');
  doc.setFontSize(6);T('Name',8,8);T('Abteilung',75,8);T('vom',8,19);T('bis',75,19);T('Beleg-Nr.',118,23);T('Währung',172,23);
- doc.setFontSize(10);doc.setFont('helvetica','bold');T($('name').value,8,12.5);T($('abt').value,75,12.5);T(dy(r.s),8,23.5);T(dy(r.e),75,23.5);T('EUR',185,23.5);
+ doc.setFontSize(10);doc.setFont('helvetica','bold');T($('name').value,8,12.5);T($('abt').value,75,12.5);T(dd(r.s),8,23.5);T(dd(r.e),75,23.5);T('EUR',185,23.5);
  doc.setFontSize(13);T('Reisekosten-Abrechnung',118,13);
- const y0=27,yh=37,yb=97;doc.rect(8,y0,R-8,yb-y0);doc.line(8,yh,R,yh);
- for(let i=1;i<11;i++)doc.line(X[i],y0,X[i],yb);
- doc.setFontSize(6.5);
- [['Datum'],['Reise-','Beginn/Ende'],['Reisezweck und besuchte Firmen bzw. Orte'],['Std.'],['Beleg-Nr.'],['Verpflegung','pauschal'],['Übernachtung','o. Frühst.'],['Fahrtkosten'],['Sonstiges','(Einzelnachw.)'],['Nebenkosten','lt. Anlagen'],['Summe']]
-  .forEach((c,i)=>c.forEach((s,j)=>T(s,X[i]+1,y0+4+j*3.6)));
- doc.setFont('helvetica','normal');doc.setFontSize(7.5);
- const n=r.rows.length,lh=Math.min(3.8,44/(2*n)),firma=$('firma').value,route=firma+'—'+$('ort').value+'—'+firma;
+ const y0=27,yh=37,yb=95;doc.rect(8,y0,R-8,yb-y0);doc.line(8,yh,R,yh);
+ for(let i=1;i<=8;i++)doc.line(X[i],y0,X[i],yb);
+ doc.setFont('helvetica','normal');doc.setFontSize(6.5);
+ H.forEach((c,i)=>c.forEach((s,j)=>T(s,X[i]+1.3,y0+4+j*3.6)));
+ doc.setFontSize(7.5);
+ const lh=3.8,firma=$('firma').value,route=firma+'—'+$('ort').value+'—'+firma;
  r.rows.forEach((x,i)=>{const t=yh+i*2*lh,y1=t+lh-.7,y2=t+2*lh-.7;
-  T(dd(x.d),X[0]+1,y1);T(x.from,X[1]+1,y1);T(x.to,X[1]+1,y2);
-  doc.setFontSize(6.5);doc.splitTextToSize(route,W[2]-2).slice(0,2).forEach((s,j)=>T(s,X[2]+1,j?y2:y1));doc.setFontSize(7.5);
-  T(hh(x.h),X[4]-1,y1,{align:'right'});
-  [[5,x.v],[6,x.u],[7,x.f],[8,x.o]].forEach(([c,v])=>{if(v)T(eur(v),X[c+1]-1.5,y1,{align:'right'})});
-  T(eur(x.sum),R-1.5,y1,{align:'right'});});
+  T(dd(x.d),X[0]+1.3,y1);T(x.from,X[1]+1.3,y1);T(x.to,X[1]+1.3,y2);
+  if(i==0){doc.setFontSize(7);doc.splitTextToSize(route,W[2]-2).slice(0,2).forEach((s,j)=>T(s,X[2]+1.3,j?y2:y1));doc.setFontSize(7.5)}
+  T(hh(x.h),X[4]-1.3,y1,{align:'right'});
+  [[4,x.v],[5,x.u],[6,x.f],[7,x.o]].forEach(([c,v])=>{if(v)T(eur(v),X[c+1]-1.3,y1,{align:'right'})});
+  T(eur(x.sum),R-1.3,y1,{align:'right'});});
  const info=[$('ort').value].concat(doc.splitTextToSize($('taet').value,W[2]-2));
- doc.setFontSize(7);info.reverse().forEach((s,j)=>T(s,X[2]+1,yb-2-j*3.2));
+ doc.setFontSize(7);info.reverse().forEach((s,j)=>T(s,X[2]+1.3,yb-2-j*3.2));
  const tot=k=>r.rows.reduce((a,x)=>a+x[k],0);
  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.rect(8,yb,R-8,6);T('Gesamtsumme',9,yb+4.2);
- [[5,'v'],[6,'u'],[7,'f'],[8,'o'],[10,'sum']].forEach(([c,k])=>{const v=tot(k);if(v)T(eur(v),X[c+1]-1.5,yb+4.2,{align:'right'})});
+ [[4,'v'],[5,'u'],[6,'f'],[7,'o'],[8,'sum']].forEach(([c,k])=>{const v=tot(k);if(v)T(eur(v),X[c+1]-1.3,yb+4.2,{align:'right'})});
  doc.setFont('helvetica','normal');doc.setFontSize(7);
  doc.rect(8,yb+6,R-8,6);T('./. RK-Vorschuss',9,yb+10.2);
- doc.rect(8,yb+12,R-8,6);T('Auszahlung / Rückzahlung',9,yb+16.2);doc.setFont('helvetica','bold');T(eur(tot('sum')),R-1.5,yb+16.2,{align:'right'});
+ doc.rect(8,yb+12,R-8,6);T('Auszahlung / Rückzahlung',9,yb+16.2);doc.setFont('helvetica','bold');T(eur(tot('sum')),R-1.3,yb+16.2,{align:'right'});
  doc.setFont('helvetica','normal');doc.rect(8,yb+18,R-8,23);doc.line(78,yb+18,78,yb+41);doc.line(148,yb+18,148,yb+41);
  doc.setFontSize(6.5);T('Abrechnung erstellt / Betrag richtig erhalten',9,yb+21.5);T('geprüft / Zahlungsanweisung',79,yb+21.5);T('Buchungsvermerke',149,yb+21.5);
  return doc;}
-$('go').onclick=async()=>{const r=calc();if(!r){alert('Bitte Start- und Endzeit prüfen.');return}
- const doc=build(r),blob=doc.output('blob'),f=new File([blob],'Reisekosten_'+iso(r.s)+'.pdf',{type:'application/pdf'});
+$('go').onclick=async()=>{const r=calc();if(!r||r.err){alert(r?'Maximal 5 Tage möglich.':'Bitte Datum und Zeit prüfen.');return}
+ const doc=build(r),blob=doc.output('blob'),f=new File([blob],'Reisekosten_'+dd(r.s)+'.pdf',{type:'application/pdf'});
  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});return}catch(e){if(e.name==='AbortError')return}}
  window.open(URL.createObjectURL(blob),'_blank');};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
