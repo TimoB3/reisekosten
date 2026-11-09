@@ -1,4 +1,4 @@
-REISEKOSTEN-APP (PWA fürs iPhone) – Version 4.3
+REISEKOSTEN-APP (PWA fürs iPhone) – Version 4.4
 ==============================================
 
 1. ZIEL
@@ -78,6 +78,10 @@ Berechnung im Detail
 - Fahrtkosten und Sonstiges werden je Tag eingegeben und in dieser Tageszeile ausgegeben.
 - Die Strecke "Firmenstandort—Ziel—Firmenstandort" steht für jede Fahrt in der Zeile
   ihres Starttages.
+- Erstreckt sich eine Fahrt über Nacht, erscheint das Feld "Übernachtungsort". Ist es
+  ausgefüllt, steht die Strecke an jedem Tag dieser Fahrt: erster Tag Firmenstandort—Ziel—
+  Übernachtungsort, Tage dazwischen Übernachtungsort—Ziel—Übernachtungsort, letzter Tag
+  Übernachtungsort—Ziel—Firmenstandort. Ohne Übernachtungsort bleibt es bei der Strecke am Starttag.
 
 4. INSTALLATION (GitHub Pages)
 ------------------------------
@@ -97,7 +101,7 @@ Damit Version 3 bei dir ankommt:
      (im Repository unter "Actions" sichtbar).
   b) App komplett schließen (im App-Umschalter wegwischen) und neu öffnen -
      dies ggf. ein zweites Mal wiederholen.
-  c) Unten auf der Seite steht "Version 4.3". Steht dort etwas anderes, gilt noch die alte Version.
+  c) Unten auf der Seite steht "Version 4.4". Steht dort etwas anderes, gilt noch die alte Version.
   d) Falls nötig: Home-Bildschirm-Symbol löschen, in iOS unter Einstellungen > Apps > Safari >
      Erweitert > Website-Daten die Seite entfernen, dann neu über Safari hinzufügen.
 Künftige Updates kommen dann automatisch beim nächsten Start (mit Internet).
@@ -117,6 +121,8 @@ v4  Datum (Tag/Monat/Jahr) und Uhrzeit (Minuten 00/15/30/45) wieder per Auswahl;
 v4.1 Uhrzeitfelder verkleinert, Datumsfelder vergrößert (Zahlen vollständig lesbar).
 v4.2 Felder Vorsteuer %, Beträge und Nettobeträge im Fuß der Ausgabe ergänzt (bleiben leer).
 v4.3 Auszahlungsbetrag steht direkt hinter "Auszahlung / Rückzahlung"; "%" mit Abstand hinter "Vorsteuer".
+v4.4 Feld Übernachtungsort bei Fahrten über Nacht; Strecke je Tag: erster Tag Firma—Ziel—Übernachtungsort,
+    Tage dazwischen Übernachtungsort—Ziel—Übernachtungsort, letzter Tag Übernachtungsort—Ziel—Firma.
 
 6. DATEIEN
 ----------

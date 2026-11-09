@@ -30,7 +30,7 @@ button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-ra
 <div class="card"><h2>Kosten pro Tag</h2><div id="days"></div></div>
 <div class="card"><h2>Vorschau</h2><div id="pv" style="overflow-x:auto"></div></div>
 <button id="go">PDF erstellen</button>
-<p style="text-align:center;opacity:.5;font-size:12px">Version 4.3</p>
+<p style="text-align:center;opacity:.5;font-size:12px">Version 4.4</p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -43,20 +43,20 @@ function mk(dv,tv){const a=/^(\d\d)\.(\d\d)\.(\d\d)$/.exec(dv),b=/^(\d\d):(\d\d)
  const d=new Date(2000+ +a[3],a[2]-1,+a[1],+b[1],+b[2]);return d.getDate()==+a[1]&&d.getMonth()==a[2]-1?d:null}
 const eur=v=>{v=Math.round(v*100)/100;return Number.isInteger(v)?v+',-':v.toFixed(2).replace('.',',')};
 const hh=h=>String(Math.round(h*100)/100).replace('.',',');
-const def=p=>p?{sd:dd(p),st:tt(p),ed:dd(p),et:'17:00',sp:true}:{sd:dd(new Date()),st:'08:00',ed:dd(new Date()),et:'17:00',sp:true};
+const def=p=>p?{sd:dd(p),st:tt(p),ed:dd(p),et:'17:00',sp:true,ue:''}:{sd:dd(new Date()),st:'08:00',ed:dd(new Date()),et:'17:00',sp:true,ue:''};
 const TR=[def()],Y0=new Date().getFullYear();
 const rg=(a,b,f)=>Array.from({length:b-a+1},(_,i)=>f?f(a+i):p2(a+i));
 function sel(o,v,i,f){return '<select data-i="'+i+'" data-f="'+f+'">'+o.map(x=>'<option value="'+x[0]+'"'+(x[0]==v?' selected':'')+'>'+x[1]+'</option>').join('')+'</select>'}
 function grp(i,f,tm){const v=TR[i][f],o=x=>x.map(y=>[y,y]);
  if(tm){const p=v.split(':');return '<div class="r3 tm" data-g="1">'+sel(o(rg(0,23)),p[0],i,f)+sel(o(['00','15','30','45']),p[1],i,f)+'</div>'}
  const p=v.split('.');return '<div class="r3" data-g="1">'+sel(o(rg(1,31)),p[0],i,f)+sel(o(rg(1,12)),p[1],i,f)+sel(rg(Y0-1,Y0+1,y=>[String(y).slice(-2),y]),p[2],i,f)+'</div>'}
-function renderTrips(){$('trips').innerHTML=TR.map((t,i)=>'<div class="dayh">Fahrt '+(i+1)+'</div><div class="sub">Beginn (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div style="flex:7">'+grp(i,'sd')+'</div><div style="flex:3">'+grp(i,'st',1)+'</div></div><div class="sub">Ende (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div style="flex:7">'+grp(i,'ed')+'</div><div style="flex:3">'+grp(i,'et',1)+'</div></div><label class="ck"><input type="checkbox" data-i="'+i+'" data-f="sp"'+(t.sp?' checked':'')+'> Spesen?</label>').join('')}
+function renderTrips(){$('trips').innerHTML=TR.map((t,i)=>'<div class="dayh">Fahrt '+(i+1)+'</div><div class="sub">Beginn (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div style="flex:7">'+grp(i,'sd')+'</div><div style="flex:3">'+grp(i,'st',1)+'</div></div><div class="sub">Ende (Tag / Monat / Jahr – Uhrzeit)</div><div class="r"><div style="flex:7">'+grp(i,'ed')+'</div><div style="flex:3">'+grp(i,'et',1)+'</div></div>'+(t.sd!=t.ed?'<label>Übernachtungsort</label><input data-i="'+i+'" data-f="ue" value="'+(t.ue||'').replace(/"/g,'&quot;')+'">':'')+'<label class="ck"><input type="checkbox" data-i="'+i+'" data-f="sp"'+(t.sp?' checked':'')+'> Spesen?</label>').join('')}
 function norm(){let p=null;TR.forEach(t=>{const s=mk(t.sd,t.st);let e=mk(t.ed,t.et);
  if(p&&s&&s<p){t.sd=dd(p);t.st=tt(p)}
  const s2=mk(t.sd,t.st);if(s2&&e&&e<s2){t.ed=t.sd;t.et=t.st;e=s2}p=e||p})}
 function calc(){
- const rate=N($('satz').value),z=$('ziel').value,F=[];
- for(const t of TR){const s=mk(t.sd,t.st),e=mk(t.ed,t.et);if(!s||!e||e<=s)return{err:'Bitte Beginn und Ende prüfen (Ende muss nach dem Beginn liegen).'};F.push({s,e,sp:t.sp})}
+ const rate=N($('satz').value),z=$('ziel').value,firma=$('firma').value,F=[];
+ for(const t of TR){const s=mk(t.sd,t.st),e=mk(t.ed,t.et);if(!s||!e||e<=s)return{err:'Bitte Beginn und Ende prüfen (Ende muss nach dem Beginn liegen).'};F.push({s,e,sp:t.sp,u:(t.ue||'').trim()})}
  F.sort((a,b)=>a.s-b.s);
  for(let i=1;i<F.length;i++)if(F[i].s<F[i-1].e)return{err:'Fahrten überschneiden sich.'};
  const M=new Map();
@@ -65,7 +65,9 @@ function calc(){
    let m=M.get(k);if(!m){if(M.size>=5)return{err:'Maximal 5 Tage möglich.'};m={d:d0,d1,ms:0,msS:0,from:a,to:b,over:false,routes:[]};M.set(k,m)}
    m.ms+=b-a;if(a<m.from)m.from=a;if(b>m.to)m.to=b;
    if(f.sp){m.msS+=b-a;if(f.s<d0)m.over=true}
-   if(first)m.routes.push(z);first=false;d0=d1}}
+   const last=f.e<=d1,multi=new Date(f.e-1).toDateString()!=f.s.toDateString();
+   if(f.u&&multi)m.routes.push((first?firma:f.u)+'—'+z+'—'+(last?firma:f.u));else if(first)m.routes.push(firma+'—'+z+'—'+firma);
+   first=false;d0=d1}}
  const rows=[...M.values()].sort((x,y)=>x.d-y.d).map(m=>{
   const h=m.ms/36e5,hs=m.msS/36e5,full=m.msS==m.d1-m.d,v=full?rate:hs>8?rate/2:0,u=m.over?-rate*0.2:0,c=costs[dd(m.d)]||{},f=N(c.f),o=N(c.o);
   return{d:m.d,from:tt(m.from),to:m.to.getTime()==m.d1.getTime()?'24:00':tt(m.to),h,v,u,f,o,sum:v+u+f+o,routes:m.routes}});
@@ -78,8 +80,8 @@ function prev(){const r=calc(),t=$('pv');
  if(r.err){t.textContent=r.err;return}
  const T=k=>r.rows.reduce((a,x)=>a+x[k],0),z=v=>v?eur(v):'';
  t.innerHTML='<table id="pv"><tr><th>Datum</th><th>Std.</th><th>Verpfl.</th><th>Übern.</th><th>Fahrt</th><th>Sonst.</th><th>Summe</th></tr>'+r.rows.map(x=>'<tr><td>'+dd(x.d)+'</td><td>'+hh(x.h)+'</td><td>'+z(x.v)+'</td><td>'+z(x.u)+'</td><td>'+z(x.f)+'</td><td>'+z(x.o)+'</td><td>'+eur(x.sum)+'</td></tr>').join('')+'<tr><th>Gesamt</th><th></th><th>'+z(T('v'))+'</th><th>'+z(T('u'))+'</th><th>'+z(T('f'))+'</th><th>'+z(T('o'))+'</th><th>'+eur(T('sum'))+'</th></tr></table>'}
-document.addEventListener('input',ev=>{const d=ev.target.dataset;if(d.k)(costs[d.k]=costs[d.k]||{})[d.t]=ev.target.value;renderDays();prev()});
-document.addEventListener('change',ev=>{const i=ev.target,d=i.dataset;if(d.i===undefined)return;const t=TR[d.i];
+document.addEventListener('input',ev=>{const d=ev.target.dataset;if(d.f=='ue'){TR[d.i].ue=ev.target.value;return}if(d.k)(costs[d.k]=costs[d.k]||{})[d.t]=ev.target.value;renderDays();prev()});
+document.addEventListener('change',ev=>{const i=ev.target,d=i.dataset;if(d.i===undefined||d.f=='ue')return;const t=TR[d.i];
  if(d.f=='sp')t.sp=i.checked;
  else{const g=[...i.closest('[data-g]').querySelectorAll('select')].map(x=>x.value);
   if(d.f=='sd'||d.f=='ed'){let D=+g[0];const M=+g[1],Y=+g[2];D=Math.min(D,new Date(2000+Y,M,0).getDate());t[d.f]=p2(D)+'.'+p2(M)+'.'+p2(Y);if(d.f=='sd')t.ed=t.sd}
@@ -107,7 +109,7 @@ function build(r){
  r.rows.forEach(x=>{const n=Math.max(2,x.routes.length),y1=t+lh-.7,y2=t+2*lh-.7;
   doc.setFontSize(7.5);
   T(dd(x.d),X[0]+1.3,y1);T(x.from,X[1]+1.3,y1);T(x.to,X[1]+1.3,y2);
-  x.routes.forEach((z,j)=>{const s=firma+'—'+z+'—'+firma;let f=7.5;doc.setFontSize(f);while(doc.getTextWidth(s)>W[2]-2.6&&f>4.5){f-=.3;doc.setFontSize(f)}T(s,X[2]+1.3,t+(j+1)*lh-.7)});
+  x.routes.forEach((s,j)=>{let f=7.5;doc.setFontSize(f);while(doc.getTextWidth(s)>W[2]-2.6&&f>4.5){f-=.3;doc.setFontSize(f)}T(s,X[2]+1.3,t+(j+1)*lh-.7)});
   doc.setFontSize(7.5);
   T(hh(x.h),X[4]-1.3,y1,{align:'right'});
   [[4,x.v],[5,x.u],[6,x.f],[7,x.o]].forEach(([c,v])=>{if(v)T(eur(v),X[c+1]-1.3,y1,{align:'right'})});
