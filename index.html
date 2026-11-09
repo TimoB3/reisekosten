@@ -30,7 +30,7 @@ button{width:100%;padding:14px;font-size:17px;font-weight:600;border:0;border-ra
 <div class="card"><h2>Kosten pro Tag</h2><div id="days"></div></div>
 <div class="card"><h2>Vorschau</h2><div id="pv" style="overflow-x:auto"></div></div>
 <button id="go">PDF erstellen</button>
-<p style="text-align:center;opacity:.5;font-size:12px">Version 4.2</p>
+<p style="text-align:center;opacity:.5;font-size:12px">Version 4.3</p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -117,8 +117,8 @@ function build(r){
  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.rect(8,yb,R-8,6);T('Gesamtsumme',9,yb+4.2);
  [[4,'v'],[5,'u'],[6,'f'],[7,'o'],[8,'sum']].forEach(([c,k])=>{const v=tot(k);if(v)T(eur(v),X[c+1]-1.3,yb+4.2,{align:'right'})});
  doc.setFont('helvetica','normal');doc.setFontSize(7);
- doc.rect(8,yb+6,R-8,6);T('./. RK-Vorschuss',9,yb+10.2);T('Vorsteuer',X[3]+1.3,yb+10.2);T('%',X[4]+1.3,yb+10.2);
- doc.rect(8,yb+12,R-8,6);T('Auszahlung / Rückzahlung',9,yb+16.2);doc.setFont('helvetica','normal');T('Beträge',X[4]+1.3,yb+16.2);doc.setFont('helvetica','bold');T(eur(tot('sum')),R-1.3,yb+16.2,{align:'right'});
+ doc.rect(8,yb+6,R-8,6);T('./. RK-Vorschuss',9,yb+10.2);T('Vorsteuer',X[3]+1.3,yb+10.2);T('%',X[3]+1.3+doc.getTextWidth('Vorsteuer')+3,yb+10.2);
+ doc.rect(8,yb+12,R-8,6);T('Auszahlung / Rückzahlung',9,yb+16.2);const aw=doc.getTextWidth('Auszahlung / Rückzahlung');doc.setFont('helvetica','normal');T('Beträge',X[4]+1.3,yb+16.2);doc.setFont('helvetica','bold');T(eur(tot('sum')),9+aw+3,yb+16.2);
  doc.setFont('helvetica','normal');doc.rect(8,yb+18,R-8,6);T('Nettobeträge',X[3]+1.3,yb+22.2);doc.setFont('helvetica','normal');doc.rect(8,yb+24,R-8,20);doc.line(78,yb+24,78,yb+44);doc.line(148,yb+24,148,yb+44);
  doc.setFontSize(6.5);T('Abrechnung erstellt / Betrag richtig erhalten',9,yb+27.5);T('geprüft / Zahlungsanweisung',79,yb+27.5);T('Buchungsvermerke',149,yb+27.5);
  return doc;}
